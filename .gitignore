@@ -1,0 +1,6 @@
+/frontend/node_modules/
+/venv/
+/frontend/dist/
+.idea/
+__pycache__/
+db.sqlite3

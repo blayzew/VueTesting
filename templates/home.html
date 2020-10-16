@@ -1,0 +1,24 @@
+{% load static %}
+
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <title>basic.html</title>
+        <meta charset="UTF-8" />
+    </head>
+    <body id="app">
+        <h1>Home</h1>
+        {% verbatim %}
+        <div id="components-demo">
+            <button-counter></button-counter>
+            <button-counter></button-counter>
+            <button-counter></button-counter>
+            <button-counter></button-counter>
+        </div>
+
+        {% endverbatim %}
+    </body>
+    <footer>
+        <script src="{% static "main.js" %}"></script>
+    </footer>
+</html>
