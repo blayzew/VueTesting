@@ -4,7 +4,23 @@ import {App} from "@vue/runtime-core";
 console.log('Compile success');
 
 export abstract class ComponentAbstract {
+  /*
+    The component instance that this object is linked to.
+   */
   protected component: any;
+
+  /*
+    A list/hash of attributes that are exposed to accept data from the parent component. It has an Array-based simple
+    syntax and an alternative Object-based syntax that allows advanced configurations such as type checking, custom
+    validation and default values.
+   */
+  static props: Array<string> | Object;
+
+  /*
+    A list of function names to use with the vue computed.
+   */
+  static computed_list: string[];
+  static methods_list: string[];
 
   /*
     Called synchronously immediately after the instance has been initialized, before data observation and
@@ -144,6 +160,79 @@ export abstract class ComponentAbstract {
    */
   public renderTriggered(e: DebuggerEvent): void {};
 
+  /*
+    The data object that the component instance is observing. The component instance proxies access to the properties
+    on its data object.
+   */
+  get $data() {
+    return this.component.$data;
+  }
+
+  get $props() {
+    return this.component.$props;
+  }
+
+  get $el() {
+    return this.component.$el;
+  }
+
+  get $options() {
+    return this.component.$options;
+  }
+
+  get $parent() {
+    return this.component.$parent;
+  }
+
+  get $root() {
+    return this.component.$root;
+  }
+
+  get $slots() {
+    return this.component.$slots;
+  }
+
+  get $refs() {
+    return this.component.$refs;
+  }
+
+  get $attrs() {
+    return this.component.$attrs;
+  }
+
+  /*
+    Watch a reactive property or a computed function on the component instance for changes. The callback gets
+    called with the new value and the old value for the given property. We can only pass top-level data, prop,
+    or computed property name as a string. For more complex expressions or nested properties, use a function
+    instead.
+   */
+  get $watch() {
+    return this.component.$watch;
+  }
+
+  /*
+    Trigger an event on the current instance. Any additional arguments will be passed into the listener's callback function.
+   */
+  get $emit() {
+    return this.component.$emit;
+  }
+
+  /*
+    Force the component instance to re-render. Note it does not affect all child components, only the instance itself
+    and child components with inserted slot content.
+   */
+  get $forceUpdate() {
+    return this.component.$forceUpdate;
+  }
+
+  /*
+    Defer the callback to be executed after the next DOM update cycle. Use it immediately after you've changed some
+    data to wait for the DOM update. This is the same as the global nextTick, except that the callback's this context
+    is automatically bound to the instance calling this method.
+   */
+  get $nextTick() {
+    return this.component.$nextTick;
+  }
 }
 
 export class VueApp {
@@ -153,6 +242,23 @@ export class VueApp {
   }
 
   public registerComponent(label: string, Cls: typeof ComponentAbstract, html: string, data?: Component) {
+    console.log(Cls.props)
+
+    let computed = {};
+    for (const computed_function_name of Cls.computed_list) {
+      computed[computed_function_name] = function (...args) {
+        return (this as any).ctrl[computed_function_name](...args)
+      }
+    }
+
+    let methods = {};
+    for (const method_function_name of Cls.methods_list) {
+      methods[method_function_name] = function (...args) {
+        return (this as any).ctrl[method_function_name](...args)
+      }
+    }
+
+
     const base_data: Component = {
       template: html,
       data() {
@@ -198,7 +304,9 @@ export class VueApp {
       },
       renderTriggered(e) {
         this.ctrl.renderTriggered(e);
-      }
+      },
+      computed: computed,
+      methods: methods
     }
 
     this.app.component(label, {...base_data, ...data})
@@ -211,14 +319,50 @@ export class VueApp {
 
 const html: string =  `
   <button @click="count++">
-    You clicked me {{ count }} times. {{ foo }}
+    You clicked me {{ count }} times. {{ d.a }}
   </button>
 `;
 
+class RandomDataStruct {
+  v: any;
+
+  constructor(public child) {
+  }
+
+  get a() {
+    return this.v;
+  }
+}
+
 class ButtonCounterComponent extends ComponentAbstract {
+  static props = {
+    foo: Number,
+  }
+  static computed_list = ['bar']
+  static methods_list = ['bar']
+
+  public inner_bar;
+
+  constructor(component) {
+    super(component);
+
+    window['ctrl'] = this;
+  }
+
+  bar() {
+    console.log('bar');
+    console.log(this);
+    return this.$data.count + this.inner_bar;
+  }
+
+
   public data(): object {
+    let d = new RandomDataStruct({something: 2});
+    d.v = 'asdfasdf';
+
     return {
-      count: 1
+      count: 1,
+      d: d
     }
   }
 }
